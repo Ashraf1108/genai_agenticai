@@ -1,0 +1,4 @@
+welcome to github
+
+var = lambda x: "even" if x%2 == 0 else "odd"
+print(var(9))

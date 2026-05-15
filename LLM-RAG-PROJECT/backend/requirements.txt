@@ -1,0 +1,13 @@
+numpy
+pandas
+openpyxl
+matplotlib
+jupyter
+fastapi
+uvicorn
+langchain
+chromadb
+pypdf
+sentence-transformers
+openai
+python-multipart
