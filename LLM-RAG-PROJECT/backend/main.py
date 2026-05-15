@@ -1,75 +1,93 @@
+# ------------------------------------------
+# IMPORT LIBRARIES
+# ------------------------------------------
 from fastapi import FastAPI
-
-from pydantic import BaseModel
-
-
-
-#creating object to fastapi
-
-app=FastAPI()
-
-#defining schema 
-class Employee(BaseModel):
-    emp_id:int
-    emp_name:str
-    dept_name:str
-    exp:int
-    email:str
-    is_active:bool
-
-#Dummy databse 
-
-Employees=[{
-    "emp_id":111,
-    "emp_name":"emp1",
-    "dept_name":"CSE",
-    "exp":1,
-    "email":"emp1@gmail.com",
-    "is_active":True
-    }]
-#GET
-#http://127.0.0.1:8000/docs
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi import UploadFile
+from fastapi import File
+# shutil is the predefined python library
+# shutil, used to receive pdf files and save to local path
+import shutil
+from rag import (
+    read_pdf,
+    chunk_text,
+    create_embeddings,
+    store_in_chromadb,
+    search_query,
+    generate_answer,
+    collection
+)
+# ------------------------------------------
+# CREATE FASTAPI APP
+# app - get,post,put,delete,head,trace,options,patch
+# ------------------------------------------
+app = FastAPI()
+# ------------------------------------------
+# ADD CORS MIDDLEWARE
+# ------------------------------------------
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+# ------------------------------------------
+# HOME API
+# ------------------------------------------
 @app.get("/")
 def home():
-    return{"message":"welcome to fastapi"}
-
-@app.get("/employees")
-def get_all_employees():
-    return{
-        "total_employees":len(Employees),
-        "data":Employees
+    return {
+        "message": "LLM RAG Project Running"
     }
-#req param 
+# ------------------------------------------
+# PDF UPLOAD API
+# ------------------------------------------
+@app.post("/upload-pdf/")
+async def upload_pdf(file: UploadFile = File(...)):
+    # Save uploaded PDF
+    pdf_path = f"../uploads/{file.filename}"
+    with open(pdf_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    # STEP 1 : READ PDF
+    text = read_pdf(pdf_path)
+    # STEP 2 : CHUNK TEXT
+    chunks = chunk_text(text)
+    # STEP 3 : CREATE EMBEDDINGS
+    embeddings = create_embeddings(chunks)
+    # STEP 4 : STORE IN CHROMADB
+    store_in_chromadb(chunks, embeddings)
+    return {
+        "message": "PDF Uploaded Successfully",
+        "total_chunks": len(chunks)
+    }
+# ------------------------------------------
+# ASK QUESTION API
+# ------------------------------------------
+@app.get("/ask/")
+def ask_question(question: str):
+    # SEARCH RELEVANT CHUNKS
+    results = search_query(question)
+    documents = results['documents'][0]
+    # CREATE CONTEXT
+    context = " ".join(documents)
+    # GENERATE FINAL ANSWER
+    answer = generate_answer(question, context)
+    return {
+        "question": question,
+        "answer": answer
+    }
 
-@app.get("/employee/{emp_id}")
-def get_employee(emp_id:int):
-    for emp in Employees:
-        if emp["emp_id"]==emp_id:
-            return emp
-        return{"message":"Employee not found"}
-    
-#POST
+# ------------------------------------------
+# VIEW CHROMADB DATA
+# ------------------------------------------
 
-@app.post("/add-employee")
-def add_employee(employee:Employee):
-    Employees.append(employee.dict())
-    return{"message":"Employee added succcesfully"}
-
-#PUT
-@app.put("/update-employee/{emp_id}")
-def update_employee(emp_id:int,updated_employee:Employee):
-    for index,emp in enumerate(Employees):
-        if emp["emp_id"]==emp_id:
-            Employees[index]==update_employee.dict()
-            return{"message":"Employee updated succesfully","updated_data":update_employee}
-        return{"message":"employee not found"}
-    
-#DELETE
-
-@app.delete("/delete-employee/{emp_id}")
-def delete_employee(emp_id: int):
-    for emp in Employees:
-        if emp["emp_id"]==emp_id:
-            Employees.remove(emp)
-            return{"message":"Employee removed successfully"}
-        return{"message":"Employee not found"}
+@app.get("/view-data/")
+def view_data():
+    data = collection.get(
+        include=["documents"]
+    )
+    return {
+        "total_chunks": len(data["documents"]),
+        "documents": data["documents"]
+    }
