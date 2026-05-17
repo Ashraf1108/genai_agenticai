@@ -59,7 +59,7 @@ Step 8.
 Step 9.
         create EC2 instance
 
-        Note : 20GB+ SSD Required
+        Note : 25GB+ SSD Required
 
 Step 10.
         assign Elastic IP (Permanent IP Address)
