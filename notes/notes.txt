@@ -63,7 +63,7 @@ Step 9.
 
 Step 10.
         assign Elastic IP (Permanent IP Address)
-        Ex. 13.63.68.207
+        Ex. 3.21.109.177 (Ashraf's AWS EC2 Permenenant Elastic IP)
 
 Step 11.
         Open the Below Ports
@@ -118,9 +118,10 @@ Step 17.
 Step 18.
     connect to jenkins
 
-    http://13.63.68.207:8080/
+    http://3.21.109.177:8080/
 
     password : sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+        >842f9ccd1ecc473b9f4a2e8aaeef76ae
 
 Step 19.
     install Below Plugins
@@ -140,7 +141,7 @@ Step 20.
 Step 21.
     configure Credentials in Jenkins
     1) OPENAI_API_KEY
-    2) EC2_HOST ubuntu@13.63.68.207
+    2) EC2_HOST ubuntu@3.21.109.177
     3) ec2-ssh-key (SSH Username w/ key)
     4) dockerhub-creds (Username with password)
 
